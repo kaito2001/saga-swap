@@ -1,17 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-interface IERC20 {
-    function totalSupply() external view returns (uint);
-    function balanceOf(address account) external view returns (uint);
-    function transfer(address recipient, uint amount) external returns (bool);
-    function allowance(address owner, address spender) external view returns (uint);
-    function approve(address spender, uint amount) external returns (bool);
-    function transferFrom(address sender, address recipient, uint amount) external returns (bool);
-
-    event Transfer(address indexed from, address indexed to, uint value);
-    event Approval(address indexed owner, address indexed spender, uint value);
-}
+import "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 contract Pair {
     address public token0;
@@ -33,16 +23,35 @@ contract Pair {
         reserve1 = uint112(balance1);
     }
 
-    function mint(address to) external returns (uint liquidity) {
-        uint balance0 = IERC20(token0).balanceOf(address(this));
-        uint balance1 = IERC20(token1).balanceOf(address(this));
-        uint amount0 = balance0 - reserve0;
-        uint amount1 = balance1 - reserve1;
+   function mint(address to) external returns (uint liquidity) {
+    uint balance0 = IERC20(token0).balanceOf(address(this));
+    uint balance1 = IERC20(token1).balanceOf(address(this));
 
-        liquidity = amount0 + amount1;
-        _update(balance0, balance1);
+    uint amount0 = balance0 - reserve0;
+    uint amount1 = balance1 - reserve1;
 
-        emit Mint(msg.sender, amount0, amount1);
+    // Tính toán số lượng LP token sẽ mint dựa trên số lượng token đã thêm vào
+    liquidity = sqrt(amount0 * amount1); // Ví dụ sử dụng công thức này cho việc mint LP token
+
+    // Mint LP token cho người cung cấp thanh khoản
+    _mint(to, liquidity); // Hàm _mint này sẽ thực hiện việc tạo LP token và cấp cho người cung cấp thanh khoản
+
+    // Cập nhật số dư dự trữ
+    _update(balance0, balance1);
+
+    // Phát sự kiện Mint
+    emit Mint(msg.sender, amount0, amount1);
+}
+
+    // Hàm tính căn bậc hai (sqrt) - đây chỉ là một ví dụ đơn giản để tính số lượng LP token cần mint
+    function sqrt(uint x) internal pure returns (uint) {
+        uint z = (x + 1) / 2;
+        uint y = x;
+        while (z < y) {
+            y = z;
+            z = (x / z + z) / 2;
+        }
+        return y;
     }
 
     function burn(address to) external returns (uint amount0, uint amount1) {

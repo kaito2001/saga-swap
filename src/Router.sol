@@ -10,16 +10,24 @@ contract Router {
         factory = Factory(_factory);
     }
 
-    function addLiquidity(
+  function addLiquidity(
         address tokenA,
         address tokenB,
         uint amountA,
         uint amountB
     ) external {
+        // Check if the pair already exists
         address pair = factory.getPair(tokenA, tokenB);
-        require(pair != address(0), "Router: PAIR_DOES_NOT_EXIST");
-        IERC20(tokenA).transferFrom(msg.sender, pair, amountA);
-        IERC20(tokenB).transferFrom(msg.sender, pair, amountB);
+        if (pair == address(0)) {
+            // Create a new pair if it does not exist
+            pair = factory.createPair(tokenA, tokenB);
+        }
+
+        // Transfer tokens to the pair
+        require(IERC20(tokenA).transferFrom(msg.sender, pair, amountA), "Transfer of tokenA failed");
+        require(IERC20(tokenB).transferFrom(msg.sender, pair, amountB), "Transfer of tokenB failed");
+
+        // Call mint to create LP tokens for the liquidity provider
         Pair(pair).mint(msg.sender);
     }
 
