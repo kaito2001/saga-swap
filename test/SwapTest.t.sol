@@ -90,50 +90,79 @@ contract SwapTest is Test {
         tokenB.approve(address(router), 1000 ether);
 
         // Now call addLiquidity
-        router.addLiquidity(address(tokenA), address(tokenB), 1 ether, 1 ether);
+        router.addLiquidity(address(tokenA), address(tokenB), 100 ether, 200 ether);
         
         // Check LP token balance after adding liquidity
         uint pairBalance = IERC20(pairAB).balanceOf(user);
-        assertEq(pairBalance, 200 ether, "LP token balance after adding liquidity is not as expected");
+        assertEq(pairBalance, 141421356237309504880, "LP token balance after adding liquidity is not as expected");
 
         vm.stopPrank();
     }
 
-    // function testAddLiquidityAC() public {
-    //     // User calls addLiquidity
-    //     vm.startPrank(user);
-    //     router.addLiquidity(address(tokenA), address(tokenC), 150 ether, 150 ether);
-    //     uint pairBalance = IERC20(pairAC).balanceOf(user);
-    //     console.log("Pair AC Balance: %s", pairBalance);
-    //     assertEq(pairBalance, 300 ether); // Check LP token balance after adding liquidity
-    //     vm.stopPrank();
-    // }
 
-    // function testSwapAB() public {
-    //     router.addLiquidity(address(tokenA), address(tokenB), 100 ether, 100 ether);
-    //     uint balanceBefore = tokenB.balanceOf(user);
-    //     console.log("Balance Before Swap (B): %s", balanceBefore);
-        
-    //     router.swap(address(tokenA), address(tokenB), 10 ether, 9 ether, user);
-        
-    //     uint balanceAfter = tokenB.balanceOf(user);
-    //     console.log("Balance After Swap (B): %s", balanceAfter);
-        
-    //     // Check the change in tokenB balance after swap
-    //     assertEq(balanceAfter - balanceBefore, 9 ether); 
-    // }
+    function testSwapAB() public {
 
-    // function testSwapAC() public {
-    //     router.addLiquidity(address(tokenA), address(tokenC), 150 ether, 150 ether);
-    //     uint balanceBefore = tokenC.balanceOf(user);
-    //     console.log("Balance Before Swap (C): %s", balanceBefore);
+        tokenA.approve(address(router), 1000 ether);
+        tokenB.approve(address(router), 1000 ether);
 
-    //     router.swap(address(tokenA), address(tokenC), 20 ether, 18 ether, user);
+        router.addLiquidity(address(tokenA), address(tokenB), 100 ether, 200 ether);
+
+        assertEq(tokenA.balanceOf(pairAB), 100 ether);
+        assertEq(tokenB.balanceOf(pairAB), 200 ether);
+        uint balanceBefore = tokenB.balanceOf(user);
+        console.log("Balance Before Swap (B): %s", balanceBefore);
+
+        router.swap(address(tokenA), address(tokenB), 10 ether, 9 ether, user);
         
-    //     uint balanceAfter = tokenC.balanceOf(user);
-    //     console.log("Balance After Swap (C): %s", balanceAfter);
+        uint balanceAfter = tokenB.balanceOf(user);
+        console.log("Balance After Swap (B): %s", balanceAfter);
         
-    //     // Check the change in tokenC balance after swap
-    //     assertEq(balanceAfter - balanceBefore, 18 ether); 
-    // }
+        // Check the change in tokenB balance after swap
+        assertEq(balanceAfter - balanceBefore, 18132217877602982631); 
+    }
+
+   function testSwapBC() public {
+    // Approve cho router
+    tokenA.approve(address(router), 1000 ether);
+    tokenB.approve(address(router), 1000 ether);
+    tokenC.approve(address(router), 1000 ether);
+
+    // Add liquidity cho pool AB và AC
+    router.addLiquidity(address(tokenA), address(tokenB), 100 ether, 200 ether);
+    router.addLiquidity(address(tokenA), address(tokenC), 100 ether, 20 ether);
+
+
+    // Check pool balances
+    assertEq(tokenA.balanceOf(pairAB), 100 ether);
+    assertEq(tokenB.balanceOf(pairAB), 200 ether);
+    assertEq(tokenA.balanceOf(pairAC), 100 ether);
+    assertEq(tokenC.balanceOf(pairAC), 20 ether);
+
+    // Setup path B → A → C
+    address[] memory path = new address[](3); // Declare path as an array of addresses
+    path[0] = address(tokenB);
+    path[1] = address(tokenA);
+    path[2] = address(tokenC);
+
+
+    // Approve cho router
+    vm.startPrank(user);
+    tokenB.approve(address(router), 100 ether);
+
+    uint balanceBefore = tokenC.balanceOf(user);
+    console2.log("Before Swap tokenC: %s", balanceBefore);
+
+    // Swap B → A → C
+    router.swapExactTokensForTokens(10 ether, 1 ether, path, user);
+
+    uint balanceAfter = tokenC.balanceOf(user);
+    uint received = balanceAfter - balanceBefore;
+    console2.log("After Swap tokenC: %s", balanceAfter);
+    console2.log("Received C: %s", received);
+
+    assertEq(received, 166782420349544744479);
+    vm.stopPrank();
+}
+
+   
 }

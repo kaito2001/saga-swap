@@ -15,7 +15,7 @@ contract Factory {
         require(token0 != address(0), "Factory: ZERO_ADDRESS");
         require(getPair[token0][token1] == address(0), "Factory: PAIR_EXISTS");
 
-        pair = address(new Pair(token0, token1));
+        pair = address(new Pair("Liquidity Pool", "LP", token0, token1));
         getPair[token0][token1] = pair;
         getPair[token1][token0] = pair;
         allPairs.push(pair);
